@@ -42,6 +42,6 @@ For this project it is important to have a set of mandatory goals and some possi
 
 ## Relevant documentation/code examples in GitHub
 
-* [DHT22 code example](https://github.com/piettetech/PietteTech_DHT)
-* [SSD1306 code example](https://github.com/adafruit/Adafruit_SSD1306)
-
+* Particle Photon - [datasheet](https://docs.particle.io/assets/pdfs/datasheets/photon-datasheet.pdf)
+* DHT22 - [datasheet](https://www.sparkfun.com/datasheets/Sensors/Temperature/DHT22.pdf) [code example](https://github.com/piettetech/PietteTech_DHT)
+* SSD1306 - [datasheet](https://cdn-shop.adafruit.com/datasheets/SSD1306.pdf) [code example](https://github.com/adafruit/Adafruit_SSD1306)
