@@ -26,9 +26,6 @@ For this project it is important to have a set of mandatory goals and some possi
 * [ ] Good interface with graphics in the display
 
 # Plan
-## Sensors that we'll use
-
-* DHT22 breakout board
 
 ## How do we plan to test the device
 
@@ -43,5 +40,5 @@ For this project it is important to have a set of mandatory goals and some possi
 ## Relevant documentation/code examples in GitHub
 
 * Particle Photon - [datasheet](https://docs.particle.io/assets/pdfs/datasheets/photon-datasheet.pdf)
-* DHT22 - [datasheet](https://www.sparkfun.com/datasheets/Sensors/Temperature/DHT22.pdf) [code example](https://github.com/piettetech/PietteTech_DHT)
-* SSD1306 - [datasheet](https://cdn-shop.adafruit.com/datasheets/SSD1306.pdf) [code example](https://github.com/adafruit/Adafruit_SSD1306)
+* DHT22 - [datasheet](https://www.sparkfun.com/datasheets/Sensors/Temperature/DHT22.pdf) | [code example](https://github.com/piettetech/PietteTech_DHT)
+* SSD1306 - [datasheet](https://cdn-shop.adafruit.com/datasheets/SSD1306.pdf) | [code example](https://github.com/adafruit/Adafruit_SSD1306)
