@@ -27,7 +27,14 @@ For this project it is important to have a set of mandatory goals and some possi
 
 # Plan
 
-## How do we plan to test the device
+## Data
+We will be using data from [Energi Data Service](https://www.energidataservice.dk/) which offers multiple datasets accessible with an API (we will be able to use webhooks).
+
+* [Energy production type](https://www.energidataservice.dk/tso-electricity/electricitybalancenonv) (useful if we prefer to use as much green energy as possible)
+* [Production general information](https://www.energidataservice.dk/tso-electricity/powersystemrightnow) 
+* [CO2 prognosis](https://www.energidataservice.dk/tso-electricity/co2emisprog)
+
+## Hardware
 
 ### Sensors
  * DHT22 temperature / humidity
