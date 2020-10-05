@@ -25,6 +25,7 @@ For this project it is important to have a set of mandatory goals and some possi
 * [ ] Predict thermal inertia based on thermal readings from other days so that the heating system can be controlled more efficiently
 * [ ] Good interface with graphics in the display
 
+# Plan
 ## Sensors that we'll use
 
 * DHT22 breakout board
