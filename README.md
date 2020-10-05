@@ -31,6 +31,9 @@ For this project it is important to have a set of mandatory goals and some possi
 
 ## How do we plan to test the device
 
+### Sensors
+ * DHT22 temperature / humidity
+ 
 ### Actuators
  * SSD1306 Display (will display the sensor data)
 
@@ -39,4 +42,5 @@ For this project it is important to have a set of mandatory goals and some possi
 ## Relevant documentation/code examples in GitHub
 
 * [DHT22 code example](https://github.com/piettetech/PietteTech_DHT)
+* [SSD1306 code example](https://github.com/adafruit/Adafruit_SSD1306)
 
