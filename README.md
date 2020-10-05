@@ -24,3 +24,21 @@ For this project it is important to have a set of mandatory goals and some possi
 * [ ] Quantify the amount of green energy you have used in comparison to what would have been used if this system wasn't in place
 * [ ] Predict thermal inertia based on thermal readings from other days so that the heating system can be controlled more efficiently
 * [ ] Good interface with graphics in the display
+
+## Sensors that we'll use
+
+* [ ] DHT22 breakout board
+
+## How do we plan to test the device
+
+* [ ] Actuators
+* [ ] SSD1306 Display
+* [ ] (will display the sensor data)
+
+* [ ] Relay + resistor of 5 watts (heater) or simulated
+* [ ] (will output heat in case the heater is turned on)
+
+## Relevant documentation/code examples in GitHub
+
+* [ ] https://github.com/piettetech/PietteTech_DHT
+
