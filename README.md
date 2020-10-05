@@ -27,18 +27,16 @@ For this project it is important to have a set of mandatory goals and some possi
 
 ## Sensors that we'll use
 
-* [ ] DHT22 breakout board
+* DHT22 breakout board
 
 ## How do we plan to test the device
 
-* [ ] Actuators
-* [ ] SSD1306 Display
-* [ ] (will display the sensor data)
+* Actuators
+* SSD1306 Display (will display the sensor data)
 
-* [ ] Relay + resistor of 5 watts (heater) or simulated
-* [ ] (will output heat in case the heater is turned on)
+* Relay + resistor of 5 watts (heater) or simulated (will output heat in case the heater is turned on)
 
 ## Relevant documentation/code examples in GitHub
 
-* [ ] https://github.com/piettetech/PietteTech_DHT
+* [DHT22 code example](https://github.com/piettetech/PietteTech_DHT)
 
