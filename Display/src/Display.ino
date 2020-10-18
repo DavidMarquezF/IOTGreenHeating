@@ -24,12 +24,18 @@ void setup()
     // Show initial display buffer contents on the screen --
     // the library initializes this with an Adafruit splash screen.
     display.display();
-    delay(2000); // Pause for 2 seconds
+    delay(1000); // Pause for 2 seconds
 
     // Clear the buffer
     display.clearDisplay();
     // Show the display buffer on the screen. You MUST call display() after
     // drawing commands to make them visible on screen!
+    display.display();
+    // text display tests
+    display.setTextSize(1);
+    display.setTextColor(WHITE);
+    display.setCursor(0, 0);
+    display.printlnf("Temperature: %d", 23);
     display.display();
 }
 

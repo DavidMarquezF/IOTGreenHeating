@@ -1,1 +1,4 @@
 Display/.vscode/launch.json
+Display/.vscode/settings.json
+Display/target/
+*.cpp
