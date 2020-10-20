@@ -34,6 +34,10 @@ We will be using data from [Energi Data Service](https://www.energidataservice.d
 * [Production general information](https://www.energidataservice.dk/tso-electricity/powersystemrightnow) 
 * [CO2 prognosis](https://www.energidataservice.dk/tso-electricity/co2emisprog)
 
+For the outside conditions (temperature and humidity) we will use data from [OpenWeatherMapAPI](https://openweathermap.org/api) which offers multiple weather APIs (both free and paid).
+
+* [Current weather](https://openweathermap.org/current)
+
 ## Hardware
 
 ### Sensors
