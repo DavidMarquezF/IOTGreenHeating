@@ -2,3 +2,6 @@ Display/.vscode/launch.json
 Display/.vscode/settings.json
 Display/target/
 *.cpp
+StubHeating/.vscode/settings.json
+StubHeating/.vscode/launch.json
+StubHeating/target/
