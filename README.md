@@ -1,5 +1,5 @@
 # IOTGreenHeating
-IOT system that based on the current green energy production and temperature controls the heating system accordingly.
+IOT system that based on the current green energy production and temperature controls the heating system accordingly. The documentation of this project can be found [here](https://docs.google.com/document/d/17gStytAsK--wiyyjuZHbbfm60SY5j2aJcIG8j6UO04s/edit?usp=sharing).
 
 
 # Features
