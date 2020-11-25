@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Environment heat test</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>
+  </head>
+  <body>
+    <h1 id="heading">Heat test</h1>
+    <label for="out-temp">Out temp</label>
+    <input
+      id="out-temp"
+      name="out-temp"
+      type="number"
+      onchange="changeOutTemp(this.value)"
+    />
+    <label for="qi">Qi</label>
+    <input id="qi" name="qi" type="number" onchange="changeQi(this.value)" />
+    <div style="position: relative; height: 40vh; width: 100%">
+      <canvas id="myChart"></canvas>
+    </div>
+
+    <script>
+      var ctx = document.getElementById("myChart").getContext("2d");
+      var myChart = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels: [],
+          datasets: [
+            {
+              label: "Room Temperature",
+              data: [],
+              backgroundColor: "rgba(255, 99, 132, 0.2)",
+              borderColor: "rgba(255, 99, 132, 1)",
+              borderWidth: 1,
+            },
+          ],
+        },
+        options: {
+          scales: {
+            yAxes: [
+              {
+                ticks: {
+                  beginAtZero: true,
+                },
+              },
+            ],
+          },
+        },
+      });
+      const Rc = 3600;
+      const C = 4;
+      var Oe = 20;
+      var qi = 0;
+      const maxRadiatorTemp = 30;
+      var t = 0;
+      var temp = 20;
+      document.getElementById("out-temp").value = Oe;
+      document.getElementById("qi").value = qi;
+
+      setInterval(function () {
+        // if(t % 60 == 0){
+        temp = (Oe - temp) * Math.exp(-3) + temp;
+        // }
+        if (qi > 0) {
+            temp += 0.5;
+        }
+        if (t % 5 == 0) {
+          
+          addData(myChart, t, temp);
+        }
+
+        t++;
+      }, 50);
+
+      function addData(chart, label, data) {
+        chart.data.labels.push(label);
+        chart.data.datasets.forEach((dataset) => {
+          dataset.data.push(data);
+        });
+        chart.update();
+      }
+      function changeOutTemp(temp) {
+        Oe = parseFloat(temp);
+      }
+
+      function changeQi(value) {
+        qi = parseFloat(value);
+      }
+    </script>
+  </body>
+</html>
