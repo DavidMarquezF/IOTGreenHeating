@@ -17,6 +17,10 @@
 
 #define HOOK_REPEAT 3
 
+// DHT22 temperature sensor macros
+#define DHTTYPE  DHT22       // Sensor type DHT11/21/22/AM2301/AM2302
+#define DHTPIN   D5          // Digital pin for communications
+
 // Particle variables
 double desiredTemp = 24.4;
 double minTemp = 21.2;
@@ -86,10 +90,16 @@ Temperature currentTemperature;
 
 boolean gpValidResponse;
 boolean taValidResponse;
+boolean tiValidResponse;
 int gpInvalidCalls = 0;
 int taInvalidCalls = 0;
+int tiInvalidCalls = 0;
 int gpSuccessfulUpdates = 0;
 int taSuccessfulUpdates = 0;
+int tiSuccessfulUpdates = 0;
+
+// Library instantion
+PietteTech_DHT DHT(DHTPIN, DHTTYPE);
 
 void handleGreenProduction(const char *event, const char *data) {
     Serial.println(Time.timeStr());
@@ -110,6 +120,7 @@ void handleGreenProduction(const char *event, const char *data) {
         // If ids match, we already have the most recent data
         if (latestGreenProduction._id == currentId) {
             Serial.printf("The ids %d and %d match, aborting.\n", latestGreenProduction._id, currentId);
+            currentGreenProduction = latestGreenProduction;
             return;
         } else {
             currentGreenProduction._id = currentId;
@@ -193,6 +204,10 @@ void updateGreenProduction() {
 }
 
 void updateOutsideTemperature() {
+    // Store latest data into variable and reinitialize current
+    latestTemperature.outside = currentTemperature.outside;
+    currentTemperature.outside = {};
+
     taValidResponse = false;
     taInvalidCalls = 0;
 
@@ -203,7 +218,7 @@ void updateOutsideTemperature() {
         delay(5s);
 
         if (!taValidResponse) {
-            Serial.printf("Call #%d: temperature outside update failed\n", gpInvalidCalls);
+            Serial.printf("Call #%d: temperature outside update failed\n", taInvalidCalls);
             taInvalidCalls++;
         } else {
             taInvalidCalls = 0;
@@ -216,7 +231,7 @@ void updateOutsideTemperature() {
         Serial.println("Temperatue webhook failed!");
         if (taSuccessfulUpdates > 0) {
             Serial.println("Using latest valid data...");
-            currentTemperature = latestTemperature;
+            currentTemperature.outside = latestTemperature.outside;
         } else {
             // We cannot show anything, because there is no valid data
             Serial.println("We cannot show anything, because there is no valid data!");
@@ -226,8 +241,52 @@ void updateOutsideTemperature() {
     }
 }
 
+// Update inside temperature using DHT22 sensor
 void updateInsideTemperature() {
-    
+    // Store latest data into variable and reinitialize current
+    latestTemperature.inside = currentTemperature.inside;
+    currentTemperature.inside = {};
+
+    tiValidResponse = false;
+    tiInvalidCalls = 0;
+
+    while (!tiValidResponse && tiInvalidCalls < HOOK_REPEAT) {
+        int measurementResult = DHT.acquireAndWait(1000);
+
+        if (measurementResult != DHTLIB_OK) {
+            // error
+            Serial.printf("Call #%d: temperature inside update failed due to internal error!\n", taInvalidCalls);
+            tiInvalidCalls++;
+        } else {
+            float measuredTemp = DHT.getCelsius();
+            Serial.printf("We obtained temperature of %f C\n", measuredTemp);
+            if (measuredTemp < 0) {
+                // invalid data
+                Serial.printf("Call #%d: temperature inside update failed due to invalid data!\n", taInvalidCalls);
+                tiInvalidCalls++;
+            } else {
+                Serial.println("TI: Valid data.");
+                currentTemperature.inside = measuredTemp;
+                tiInvalidCalls = 0;
+                tiValidResponse = true;
+            }
+        }
+    }
+
+    // Even after HOOK_REPEAT tries, API failed, we need to reuse the old data 
+    // and try again next time device will wake up
+    if (!tiValidResponse) {
+        Serial.println("Temperatue sensor failed!");
+        if (tiSuccessfulUpdates > 0) {
+            Serial.println("Using latest valid data...");
+            currentTemperature.inside = latestTemperature.inside;
+        } else {
+            // We cannot show anything, because there is no valid data
+            Serial.println("We cannot show anything, because there is no valid data!");
+        }        
+    } else {
+        tiSuccessfulUpdates++;
+    }
 }
 
 // setup() runs once, when the device is first turned on.
@@ -241,6 +300,12 @@ void setup() {
     // Subscribe to the hook responses
     Particle.subscribe(GP_HOOK_RESP, handleGreenProduction, MY_DEVICES);
     Particle.subscribe(TA_HOOK_RESP, handleTemperatureAarhus, MY_DEVICES);
+
+    Serial.begin(9600);
+    Serial.print("DHT LIB version: ");
+    Serial.println(DHTLIB_VERSION);
+    DHT.begin();
+    // delay(2s);
 }
 
 // loop() runs over and over again, as quickly as it can execute.
