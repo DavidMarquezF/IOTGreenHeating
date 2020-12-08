@@ -100,6 +100,7 @@ int tiSuccessfulUpdates = 0;
 
 // Library instantion
 PietteTech_DHT DHT(DHTPIN, DHTTYPE);
+int n = 0;
 
 void handleGreenProduction(const char *event, const char *data) {
     Serial.println(Time.timeStr());
@@ -255,14 +256,14 @@ void updateInsideTemperature() {
 
         if (measurementResult != DHTLIB_OK) {
             // error
-            Serial.printf("Call #%d: temperature inside update failed due to internal error!\n", taInvalidCalls);
+            Serial.printf("Call #%d: temperature inside update failed due to internal error!\n", tiInvalidCalls);
             tiInvalidCalls++;
         } else {
             float measuredTemp = DHT.getCelsius();
             Serial.printf("We obtained temperature of %f C\n", measuredTemp);
             if (measuredTemp < 0) {
                 // invalid data
-                Serial.printf("Call #%d: temperature inside update failed due to invalid data!\n", taInvalidCalls);
+                Serial.printf("Call #%d: temperature inside update failed due to invalid data!\n", tiInvalidCalls);
                 tiInvalidCalls++;
             } else {
                 Serial.println("TI: Valid data.");
@@ -308,15 +309,52 @@ void setup() {
     // delay(2s);
 }
 
+void printCurrentSituation() {
+    Serial.printf("#%d: CURRENT DEVICE STATUS\n", n);
+    Serial.println(Time.timeStr());
+    Serial.println("-----------------------------");
+
+    Serial.println("Green production information:");
+    Serial.print("Percentage: ");
+    Serial.println(currentGreenProduction.percentage);
+    Serial.print("Total: ");
+    Serial.println(currentGreenProduction.totalLoad);
+    Serial.print("Onshore wind: ");
+    Serial.println(currentGreenProduction.onshoreWind);
+    Serial.print("Offshore wind: ");
+    Serial.println(currentGreenProduction.offshoreWind);
+    Serial.print("Biomass: ");
+    Serial.println(currentGreenProduction.biomass);
+    Serial.print("Solar: ");
+    Serial.println(currentGreenProduction.solarPower);
+    Serial.print("Hydro: ");
+    Serial.println(currentGreenProduction.hydroPower);
+    Serial.print("Other: ");
+    Serial.println(currentGreenProduction.otherRenewable);
+
+    Serial.println("-----------------------------");
+    Serial.println("Temperature information: ");
+    Serial.print("Inside: ");
+    Serial.println(currentTemperature.inside);
+    Serial.print("Outside: ");
+    Serial.println(currentTemperature.outside);
+
+    Serial.println("-----------------------------");
+}
+
 // loop() runs over and over again, as quickly as it can execute.
 void loop() {
     // The core of your code will likely live here.
+    n++;
     
     updateGreenProduction();
 
     updateOutsideTemperature();
 
     updateInsideTemperature();
+
+    delay(2s);
+    printCurrentSituation();
 
     // sleep
     delay(30s);
