@@ -21,6 +21,17 @@
 #define DHTTYPE  DHT22       // Sensor type DHT11/21/22/AM2301/AM2302
 #define DHTPIN   D5          // Digital pin for communications
 
+// Declaration for SSD1306 display connected using software SPI
+#define SCREEN_WIDTH (uint8_t)128 // OLED display width, in pixels
+#define SCREEN_HEIGHT (uint8_t)64 // OLED display height, in pixels
+#define SCREEN_PADDING (uint8_t)4
+
+#define OLED_MOSI (int8_t) D0
+#define OLED_CLK (int8_t) D1
+#define OLED_DC (int8_t) D2
+#define OLED_RESET (int8_t) D3
+#define OLED_CS (int8_t) D4
+
 // Particle variables
 double desiredTemp = 24.4;
 double minTemp = 21.2;
@@ -98,9 +109,11 @@ int gpSuccessfulUpdates = 0;
 int taSuccessfulUpdates = 0;
 int tiSuccessfulUpdates = 0;
 
+int n = 0;
+
 // Library instantion
 PietteTech_DHT DHT(DHTPIN, DHTTYPE);
-int n = 0;
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, OLED_MOSI, OLED_CLK, OLED_DC, OLED_RESET, OLED_CS);
 
 void handleGreenProduction(const char *event, const char *data) {
     Serial.println(Time.timeStr());
@@ -199,8 +212,8 @@ void updateGreenProduction() {
 
     // Calculate the green energy production percentage
     if (gpSuccessfulUpdates > 0) {
-        currentGreenProduction.percentage = (currentGreenProduction.onshoreWind + currentGreenProduction.offshoreWind + currentGreenProduction.biomass + currentGreenProduction.solarPower + currentGreenProduction.hydroPower + currentGreenProduction.otherRenewable) / currentGreenProduction.totalLoad;
-        Serial.printf("Current green production percentage is: %.2f\n", currentGreenProduction.percentage);
+        currentGreenProduction.percentage = 100 * (currentGreenProduction.onshoreWind + currentGreenProduction.offshoreWind + currentGreenProduction.biomass + currentGreenProduction.solarPower + currentGreenProduction.hydroPower + currentGreenProduction.otherRenewable) / currentGreenProduction.totalLoad;
+        Serial.printf("Current green production percentage is: %.2f %%\n", currentGreenProduction.percentage);
     }  
 }
 
@@ -290,6 +303,29 @@ void updateInsideTemperature() {
     }
 }
 
+// based on https://www.flaticon.com/free-icon/leaf_497384
+const unsigned char leafIcon [] PROGMEM = {
+	// 'leaf, 48x48px
+	0x00, 0x00, 0x00, 0x00, 0x07, 0xfe, 0x00, 0x00, 0x00, 0x0f, 0xff, 0xff, 0x00, 0x00, 0x01, 0xff, 
+	0xf8, 0x0e, 0x00, 0x00, 0x0f, 0xfc, 0x00, 0x1c, 0x00, 0x00, 0x7f, 0x00, 0x00, 0x38, 0x00, 0x03, 
+	0xf0, 0x00, 0x00, 0x30, 0x00, 0x07, 0xc0, 0x00, 0x00, 0x70, 0x00, 0x1e, 0x00, 0x00, 0x00, 0xe0, 
+	0x00, 0x78, 0x00, 0x00, 0x00, 0xc0, 0x00, 0xf0, 0x00, 0x00, 0x01, 0xc0, 0x01, 0xc0, 0x00, 0x00, 
+	0x01, 0x80, 0x03, 0x80, 0x00, 0x0c, 0x03, 0x80, 0x07, 0x00, 0x00, 0x1c, 0x03, 0x00, 0x0e, 0x00, 
+	0x00, 0x78, 0x07, 0x00, 0x1c, 0x00, 0x01, 0xe0, 0x06, 0x00, 0x18, 0x00, 0x03, 0xc0, 0x0e, 0x00, 
+	0x38, 0x00, 0x0f, 0x00, 0x0c, 0x00, 0x30, 0x00, 0x1e, 0x00, 0x0c, 0x00, 0x70, 0x00, 0x3c, 0x00, 
+	0x1c, 0x00, 0x60, 0x00, 0x70, 0x00, 0x1c, 0x00, 0x60, 0x00, 0xe0, 0x00, 0x18, 0x00, 0xe0, 0x01, 
+	0xc0, 0x00, 0x18, 0x00, 0xc0, 0x03, 0x80, 0x00, 0x38, 0x00, 0xc0, 0x07, 0x00, 0x00, 0x30, 0x00, 
+	0xc0, 0x0e, 0x00, 0x00, 0x30, 0x00, 0xc0, 0x1c, 0x00, 0x00, 0x30, 0x00, 0xc0, 0x38, 0x00, 0x00, 
+	0x70, 0x00, 0xc0, 0x30, 0x00, 0x00, 0x60, 0x00, 0xe0, 0x60, 0x00, 0x00, 0x60, 0x00, 0x60, 0xe0, 
+	0x00, 0x00, 0xe0, 0x00, 0x61, 0xc0, 0x00, 0x00, 0xc0, 0x00, 0x71, 0x80, 0x00, 0x01, 0xc0, 0x00, 
+	0x33, 0x80, 0x00, 0x01, 0x80, 0x00, 0x3f, 0x00, 0x00, 0x03, 0x80, 0x00, 0x1e, 0x00, 0x00, 0x07, 
+	0x00, 0x00, 0x0e, 0x00, 0x00, 0x0e, 0x00, 0x00, 0x0f, 0x00, 0x00, 0x1e, 0x00, 0x00, 0x1f, 0xc0, 
+	0x00, 0x38, 0x00, 0x00, 0x19, 0xf8, 0x01, 0xf0, 0x00, 0x00, 0x38, 0x7f, 0xff, 0xe0, 0x00, 0x00, 
+	0x30, 0x0f, 0xff, 0x00, 0x00, 0x00, 0x70, 0x00, 0x00, 0x00, 0x00, 0x00, 0x60, 0x00, 0x00, 0x00, 
+	0x00, 0x00, 0x60, 0x00, 0x00, 0x00, 0x00, 0x00, 0xe0, 0x00, 0x00, 0x00, 0x00, 0x00, 0xc0, 0x00, 
+	0x00, 0x00, 0x00, 0x00, 0xc0, 0x00, 0x00, 0x00, 0x00, 0x00, 0xc0, 0x00, 0x00, 0x00, 0x00, 0x00
+};
+
 // setup() runs once, when the device is first turned on.
 void setup() {
     // Put initialization like pinMode and begin functions here.
@@ -307,6 +343,20 @@ void setup() {
     Serial.println(DHTLIB_VERSION);
     DHT.begin();
     // delay(2s);
+
+    if (!display.begin(SSD1306_SWITCHCAPVCC))
+    {
+        Log.info("SSD1306 allocation failed");
+        //TODO: Stop the execution of the program
+    }
+    // Show initial display buffer contents on the screen --
+    // the library initializes this with an Adafruit splash screen.
+    display.display();
+    delay(2s); // Pause for 2 seconds
+
+    // Clear the buffer
+    display.clearDisplay();
+    display.display();
 }
 
 void printCurrentSituation() {
@@ -344,9 +394,7 @@ void printCurrentSituation() {
 
 // loop() runs over and over again, as quickly as it can execute.
 void loop() {
-    // The core of your code will likely live here.
-    n++;
-    
+    // The core of your code will likely live here.    
     updateGreenProduction();
 
     updateOutsideTemperature();
@@ -356,6 +404,60 @@ void loop() {
     delay(2s);
     printCurrentSituation();
 
-    // sleep
-    delay(30s);
+    // display for 30 sec and then do to sleep
+    // https://diyprojects.io/using-i2c-128x64-0-96-ssd1306-oled-display-arduino/
+    
+    // Clear the buffer
+    display.clearDisplay();
+    // // top border
+    // display.drawLine(0, 0, SCREEN_WIDTH-1, 0, WHITE);
+    // // left border
+    // display.drawLine(0, 0, 0, SCREEN_HEIGHT-1, WHITE);
+    // // right border
+    // display.drawLine(SCREEN_WIDTH-1, 0, SCREEN_WIDTH-1, SCREEN_HEIGHT-1, WHITE);
+    // // bottom border
+    // display.drawLine(0, SCREEN_HEIGHT-1, SCREEN_WIDTH-1, SCREEN_HEIGHT-1, WHITE);
+    display.drawBitmap(0, 0, leafIcon, 48, 48, WHITE);
+    display.setCursor(0, 48);
+    display.setTextSize(1);
+    display.setTextColor(WHITE);
+    // display curent gp %
+    display.printlnf(" %3g %% ", round(currentGreenProduction.percentage));
+    display.println("in grid");
+    // draw delimiter
+    display.drawLine(51, 0, 51, SCREEN_HEIGHT-1, WHITE);
+    display.drawLine(51, 20, SCREEN_WIDTH-1, 20, WHITE);
+    display.drawLine(51, 44, SCREEN_WIDTH-1, 44, WHITE);
+    display.setCursor(54, 0);
+    // display date and time
+    // https://docs.particle.io/reference/device-os/firmware/photon/#setformat-
+    // http://www.cplusplus.com/reference/ctime/strftime/
+    time_t current = Time.now();
+    display.print(Time.format(current, " %F \n"));
+    display.setCursor(54, 8);
+    display.print(Time.format(current, "   %R   \n\n"));
+    display.setCursor(54, 24);
+    display.print(" Heating is \n");
+    display.setCursor(54, 32);
+    display.print(" ON / OFF \n");
+    display.setCursor(54, 48);
+    display.printf(" IN:  %2.1f C\n", currentTemperature.inside);
+    display.setCursor(54, 56);
+    display.printlnf(" OUT: %2.1f C\n", currentTemperature.outside);
+    display.display();
+
+    Serial.printf("Sleep cycle #%d: Going to sleep...\n", n);
+    SystemSleepConfiguration config;
+    config.mode(SystemSleepMode::STOP)
+          .duration(1min)
+          .flag(SystemSleepFlag::WAIT_CLOUD);
+    SystemSleepResult result = System.sleep(config);
+
+    if (result.error() != 0) {
+        Serial.printf("Something went wrong during #%d sleep cycle.\n", n);
+    } else {
+        Serial.printf("Sleep cycle #%d: Device successfully woke up from sleep.\n", n);
+    }
+
+    n++;
 }
