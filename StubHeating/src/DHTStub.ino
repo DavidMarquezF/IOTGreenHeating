@@ -12,7 +12,6 @@
 // D5, D6, D7, A2, A6, WKP, TX, RX can be used with no limitations
 DHTStub::DHTStub(uint16_t pin)
 {
-  _waitingResponse = false;
   _pin = pin;
   _maxCycles = System.ticksPerMicrosecond() * 2000; // 1 ms of timeout for reading
 }
@@ -37,30 +36,18 @@ void DHTStub::updateHumid(float humid){
   _humid = (int16_t)(humid * 10);
 }
 
-void DHTStub::send()
-{
-    sendData();
-    _waitingResponse = false;
-}
-
-bool DHTStub::waitingResponse()
-{
-    return _waitingResponse;
-}
-
 
 void DHTStub::sendData()
 {
   DEBUG_PRINTLN("DHT sending data");
- // detatchReadInterrupt();
- // noInterrupts();
-
+ 
   pinMode(_pin, OUTPUT);
   digitalWrite(_pin, LOW);
   uint16_t checkSum = ((uint8_t)_temp) + ((uint8_t) (_temp >> 8))+ ((uint8_t)_humid) + ((uint8_t)(_humid >> 8));
 
   // Since we received the high flank, the reader waits for 55 microseconds to start reading low
   delayMicroseconds(55);
+
   // Datasheet says pull down for 80us
   // https://cdn-shop.adafruit.com/datasheets/Digital+humidity+and+temperature+sensor+AM2302.pdf
   delayMicroseconds(_pullTime);
@@ -73,7 +60,7 @@ void DHTStub::sendData()
   // high pulse is ~28 microseconds then it's a 0 and if it's ~70 microseconds
   // then it's a 1.
   // 16 bits for RH, 16 bits for temperature and 8 bits for check sum
-  //If the temperature is negative, the highest bit will be -1 (it's not the same as C2)
+  // If the temperature is negative, the highest bit will be -1 (it's not the same as C2)
 
   DEBUG_VERB_PRINT("Humidity: ")
   sendWord(_humid);
@@ -91,15 +78,25 @@ void DHTStub::sendData()
   // Reenable all interrupts
   pinMode(_pin, INPUT);
 
-  // https://community.particle.io/t/interrupts-priority-architecture/18671/26
+  /* This is used to clear the pending interrupt flag generated
+   * by the changing of the pin in this interrupt
+   * since there is a bug with photon when calling 
+   * detachInterrupt and attachInterrupt inside an interrupt callback
+   * 
+   * Detaching and attaching the interrupt would mean that there wouldn't
+   * be any pending interrupts (when an interrupt is raised while another interrupts
+   * callback is being executed) but since it doesn't work we clear the pending
+   * interrupt by hand.
+   *  
+   * https://community.particle.io/t/interrupts-priority-architecture/18671/26
+   */
   STM32_Pin_Info* PIN_MAP = HAL_Pin_Map();
 
   uint16_t gpio_pin = PIN_MAP[_pin].gpio_pin;
 
   EXTI_ClearITPendingBit(gpio_pin);
 
-  //interrupts();
- // attachReadInterrupt();
+
 }
 
 void DHTStub::handleFallingInterrupt(void)
@@ -125,7 +122,6 @@ void DHTStub::handleFallingInterrupt(void)
   // detachInterrupt, where calling it from inside an interrupt
   // crashes the whole program
   sendData(); 
-  _waitingResponse = true;
 }
 
 void DHTStub::sendWord(uint16_t value)

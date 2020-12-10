@@ -36,11 +36,6 @@ void setup() {
 void loop() {    
   static unsigned long time_now = 0;
   
-  //if(dht.waitingResponse()){
-    //model.getTemp();
-  //  delay(1);
-    //dht.send();
-  //}
   if(millis() - time_now > model.getPeriodMs()){
       time_now = millis();
       model.run();

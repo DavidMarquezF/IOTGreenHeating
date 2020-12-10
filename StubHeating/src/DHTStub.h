@@ -45,15 +45,12 @@ class DHTStub {
         void begin(uint8_t usec = 90);
         void updateTemp(float temp);
         void updateHumid(float humid);
-        void send(void);
-        bool waitingResponse(void);
     private:
         uint8_t _pullTime;
         uint16_t _pin;
         uint16_t _temp;
         uint16_t _humid;
         uint16_t _maxCycles;
-        volatile bool _waitingResponse;
         void sendData();
         void handleFallingInterrupt(void);
         void attachReadInterrupt(void);
