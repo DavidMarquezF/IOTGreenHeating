@@ -33,10 +33,10 @@
 #define OLED_CS (int8_t) D4
 
 // Particle variables
-double desiredTemp = 24.4;
-double minTemp = 21.2;
-double minGreen = 66.6;
-int checkPeriod = 15;
+double desiredTemp = 24.0;
+double minTemp = 18.0;
+double minGreen = 20.0;
+int checkPeriod = 2;
 
 // Particles functions (setters for the variables)
 int setDesiredTemp(String extra) {
@@ -109,12 +109,16 @@ int gpSuccessfulUpdates = 0;
 int taSuccessfulUpdates = 0;
 int tiSuccessfulUpdates = 0;
 
+int gpUpdateHour;
+boolean heatingOn;
+
 int n = 0;
 
 // Library instantion
 PietteTech_DHT DHT(DHTPIN, DHTTYPE);
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, OLED_MOSI, OLED_CLK, OLED_DC, OLED_RESET, OLED_CS);
 
+// Hook response handlers
 void handleGreenProduction(const char *event, const char *data) {
     Serial.println(Time.timeStr());
     Serial.println("Handle greenproduction ---> Got response containing: " + String(data));
@@ -173,6 +177,7 @@ void handleTemperatureAarhus(const char* event, const char* data) {
     } 
 }
 
+// Update handlers
 void updateGreenProduction() {
     // Store latest data into variable and reinitialize current
     latestGreenProduction = currentGreenProduction;
@@ -208,6 +213,7 @@ void updateGreenProduction() {
         }        
     } else {
         gpSuccessfulUpdates++;
+        gpUpdateHour = Time.hour();
     }
 
     // Calculate the green energy production percentage
@@ -326,6 +332,121 @@ const unsigned char leafIcon [] PROGMEM = {
 	0x00, 0x00, 0x00, 0x00, 0xc0, 0x00, 0x00, 0x00, 0x00, 0x00, 0xc0, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
+void displayCurrentStatus() {
+    // display for 30 sec and then do to sleep
+    // https://diyprojects.io/using-i2c-128x64-0-96-ssd1306-oled-display-arduino/
+    
+    // Clear the buffer
+    display.clearDisplay();
+    display.drawBitmap(0, 0, leafIcon, 48, 48, WHITE);
+    display.setCursor(0, 48);
+    display.setTextSize(1);
+    display.setTextColor(WHITE);
+    // display curent gp %
+    display.printlnf(" %3g %% ", round(currentGreenProduction.percentage));
+    display.println("in grid");
+    // draw delimiters and the grid
+    display.drawLine(51, 0, 51, SCREEN_HEIGHT-1, WHITE);
+    display.drawLine(51, 20, SCREEN_WIDTH-1, 20, WHITE);
+    display.drawLine(51, 44, SCREEN_WIDTH-1, 44, WHITE);
+    display.setCursor(54, 0);
+    // display date and time
+    // https://docs.particle.io/reference/device-os/firmware/photon/#setformat-
+    // http://www.cplusplus.com/reference/ctime/strftime/
+    time_t current = Time.now();
+    display.println(Time.format(current, " %F "));
+    display.setCursor(54, 8);
+    display.println(Time.format(current, "    %R   "));
+    display.setCursor(54, 24);
+    display.println(" Heating is ");
+    display.setCursor(54, 32);
+    display.println(heatingOn ? "     ON" : "    OFF"); // TODO show on or off based on the current status
+    display.setCursor(54, 48);
+    display.printlnf(" IN:  %2.1f C", currentTemperature.inside);
+    display.setCursor(54, 56);
+    display.printlnf(" OUT: %2.1f C", currentTemperature.outside);
+    display.display();
+}
+
+// Helper functions
+void printCurrentStatus() {
+    Serial.printf("#%d: CURRENT DEVICE STATUS\n", n);
+    Serial.println(Time.timeStr());
+    Serial.println("-----------------------------");
+
+    Serial.println("Green production information:");
+    Serial.printlnf("Last update hour: %d", gpUpdateHour);
+    Serial.printlnf("Percentage: %.2f %%", currentGreenProduction.percentage);
+    Serial.printlnf("Total: %.2f", currentGreenProduction.totalLoad);
+    Serial.printlnf("Onshore wind: %.2f", currentGreenProduction.onshoreWind);
+    Serial.printlnf("Offshore wind: %.2f", currentGreenProduction.offshoreWind);
+    Serial.printlnf("Biomass: %.2f", currentGreenProduction.biomass);
+    Serial.printlnf("Solar: %.2f", currentGreenProduction.solarPower);
+    Serial.printlnf("Hydro: %.2f", currentGreenProduction.hydroPower);
+    Serial.printlnf("Other: %.2f", currentGreenProduction.otherRenewable);
+
+    Serial.println("-----------------------------");
+    Serial.println("Temperature information: ");
+    Serial.printlnf("Inside: %.2f C", currentTemperature.inside);
+    Serial.printlnf("Outside: %.2f C", currentTemperature.outside);
+
+    Serial.println("-----------------------------");
+}
+
+void handleHeating() {
+    // If the heating is currently on, check the status of the temperature
+    if (heatingOn) {
+        // We know the state of the current room temperature
+        if (tiSuccessfulUpdates > 0) {
+            if (currentTemperature.inside >= desiredTemp) {
+                // Turn the heater off
+                heatingOn = false;
+                Serial.println("Heater: I am turning off. We have reached the desired temperature.");
+            } else {
+                // Let the heater be
+                Serial.println("Heater: I am staying on. We have not reached the desired temperature yet.");
+            }
+        // We do not know anything about the status inside
+        } else {
+            Serial.println("Heater: I am on and I do not have data on current temperature inside!");
+        }
+    // If the heating is off, check the inside temperature        
+    } else {
+        if (tiSuccessfulUpdates > 0) {
+            if (currentTemperature.inside < desiredTemp) {
+                if (gpSuccessfulUpdates > 0) {
+                    if (currentTemperature.inside < minTemp) {
+                        // It is cold inside, we should turn on the heater no matter the green production percentage
+                        heatingOn = true;
+                        Serial.println("Heater: Sorry man, it is too cold inside. I am turning the heater on even though it is not ecologic enough for you.");
+                    } else if (currentGreenProduction.percentage >= minGreen) {
+                        // The green production percentage is high enough to start heating
+                        heatingOn = true;
+                        Serial.println("Heater: I am turning on the ecologic heating now.");
+                    } else {
+                        Serial.println("Heater: It is not that cold here and there is not enough green energy in the system right now to start the heating.");
+                    }
+                // We do not know anything about the green production status
+                } else {
+                    if (currentTemperature.inside < minTemp) {
+                        // It is cold inside, we should turn on the heater no matter the green production percentage
+                        heatingOn = true;
+                        Serial.println("Heater: Sorry man, it is too cold inside. I am turning the heater on even though I do not know anything about the green energy right now.");
+                    } else {
+                        Serial.println("Heater: I am off and I do not have data on green production!");
+                    }                    
+                }
+            // There is no need to start heating now, we are above the desired temperature                             
+            } else {
+                Serial.println("Heater: There is no need to start heating now, we are above the desired temperature.");
+            }
+        // We do not know anything about the status inside
+        } else {
+            Serial.println("Heater: I am off and I do not have data on current temperature inside!");
+        }
+    }
+}
+
 // setup() runs once, when the device is first turned on.
 void setup() {
     // Put initialization like pinMode and begin functions here.
@@ -359,104 +480,36 @@ void setup() {
     display.display();
 }
 
-void printCurrentSituation() {
-    Serial.printf("#%d: CURRENT DEVICE STATUS\n", n);
-    Serial.println(Time.timeStr());
-    Serial.println("-----------------------------");
-
-    Serial.println("Green production information:");
-    Serial.print("Percentage: ");
-    Serial.println(currentGreenProduction.percentage);
-    Serial.print("Total: ");
-    Serial.println(currentGreenProduction.totalLoad);
-    Serial.print("Onshore wind: ");
-    Serial.println(currentGreenProduction.onshoreWind);
-    Serial.print("Offshore wind: ");
-    Serial.println(currentGreenProduction.offshoreWind);
-    Serial.print("Biomass: ");
-    Serial.println(currentGreenProduction.biomass);
-    Serial.print("Solar: ");
-    Serial.println(currentGreenProduction.solarPower);
-    Serial.print("Hydro: ");
-    Serial.println(currentGreenProduction.hydroPower);
-    Serial.print("Other: ");
-    Serial.println(currentGreenProduction.otherRenewable);
-
-    Serial.println("-----------------------------");
-    Serial.println("Temperature information: ");
-    Serial.print("Inside: ");
-    Serial.println(currentTemperature.inside);
-    Serial.print("Outside: ");
-    Serial.println(currentTemperature.outside);
-
-    Serial.println("-----------------------------");
-}
-
 // loop() runs over and over again, as quickly as it can execute.
 void loop() {
-    // The core of your code will likely live here.    
-    updateGreenProduction();
+    // The core of your code will likely live here.  
+    // Update once every hour, if we fail to get the data, we can perform extra update 
+    if (Time.hour() > gpUpdateHour || (Time.hour() == 0 && gpUpdateHour == 23) || !gpValidResponse) {
+        updateGreenProduction();
+    }    
 
     updateOutsideTemperature();
 
     updateInsideTemperature();
 
     delay(2s);
-    printCurrentSituation();
+    printCurrentStatus();
 
-    // display for 30 sec and then do to sleep
-    // https://diyprojects.io/using-i2c-128x64-0-96-ssd1306-oled-display-arduino/
-    
-    // Clear the buffer
-    display.clearDisplay();
-    // // top border
-    // display.drawLine(0, 0, SCREEN_WIDTH-1, 0, WHITE);
-    // // left border
-    // display.drawLine(0, 0, 0, SCREEN_HEIGHT-1, WHITE);
-    // // right border
-    // display.drawLine(SCREEN_WIDTH-1, 0, SCREEN_WIDTH-1, SCREEN_HEIGHT-1, WHITE);
-    // // bottom border
-    // display.drawLine(0, SCREEN_HEIGHT-1, SCREEN_WIDTH-1, SCREEN_HEIGHT-1, WHITE);
-    display.drawBitmap(0, 0, leafIcon, 48, 48, WHITE);
-    display.setCursor(0, 48);
-    display.setTextSize(1);
-    display.setTextColor(WHITE);
-    // display curent gp %
-    display.printlnf(" %3g %% ", round(currentGreenProduction.percentage));
-    display.println("in grid");
-    // draw delimiter
-    display.drawLine(51, 0, 51, SCREEN_HEIGHT-1, WHITE);
-    display.drawLine(51, 20, SCREEN_WIDTH-1, 20, WHITE);
-    display.drawLine(51, 44, SCREEN_WIDTH-1, 44, WHITE);
-    display.setCursor(54, 0);
-    // display date and time
-    // https://docs.particle.io/reference/device-os/firmware/photon/#setformat-
-    // http://www.cplusplus.com/reference/ctime/strftime/
-    time_t current = Time.now();
-    display.print(Time.format(current, " %F \n"));
-    display.setCursor(54, 8);
-    display.print(Time.format(current, "   %R   \n\n"));
-    display.setCursor(54, 24);
-    display.print(" Heating is \n");
-    display.setCursor(54, 32);
-    display.print(" ON / OFF \n");
-    display.setCursor(54, 48);
-    display.printf(" IN:  %2.1f C\n", currentTemperature.inside);
-    display.setCursor(54, 56);
-    display.printlnf(" OUT: %2.1f C\n", currentTemperature.outside);
-    display.display();
+    handleHeating();
 
-    Serial.printf("Sleep cycle #%d: Going to sleep...\n", n);
+    displayCurrentStatus();
+
+    Serial.printlnf("Sleep cycle #%d: Going to sleep for %d minutes...", n, checkPeriod);
     SystemSleepConfiguration config;
     config.mode(SystemSleepMode::STOP)
-          .duration(1min)
+          .duration(checkPeriod * 1min)
           .flag(SystemSleepFlag::WAIT_CLOUD);
     SystemSleepResult result = System.sleep(config);
 
     if (result.error() != 0) {
-        Serial.printf("Something went wrong during #%d sleep cycle.\n", n);
+        Serial.printlnf("Something went wrong during #%d sleep cycle.", n);
     } else {
-        Serial.printf("Sleep cycle #%d: Device successfully woke up from sleep.\n", n);
+        Serial.printlnf("Sleep cycle #%d: Device successfully woke up from sleep.", n);
     }
 
     n++;
