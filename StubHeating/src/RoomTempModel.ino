@@ -12,7 +12,7 @@ RoomTempModel::RoomTempModel(uint16_t periodMs, uint16_t roomC,uint16_t roomR,ui
     _heaterTau = _heaterR * _heaterC;
 
 }
-void RoomTempModel::begin(uint16_t playSpeed, int16_t startTemp, bool heatEnabled)
+void RoomTempModel::begin(uint16_t playSpeed, double startTemp, bool heatEnabled)
 {
     _playSpeed = playSpeed;
     _temp0 = startTemp;
@@ -50,7 +50,7 @@ double RoomTempModel::calcTempHeat()
     return _maxHeatTemp * _heatEnabled * (1 - eHeat) + _heat0 * eHeat;
 }
 
-void RoomTempModel::setExtTemp(uint16_t extTemp)
+void RoomTempModel::setExtTemp(double extTemp)
 {
     _temp0 =calcTempRoom();
     _Oe = extTemp;

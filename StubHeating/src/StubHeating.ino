@@ -12,7 +12,7 @@ DHTStub dht(D5);
 RoomTempModel model;
 
 int setExtTemp(String extra){
-  int value = extra.toInt();
+  int value = extra.toFloat();
   model.setExtTemp(value);
   return 0;
 }

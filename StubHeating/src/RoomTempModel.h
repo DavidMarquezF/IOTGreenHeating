@@ -4,10 +4,10 @@
 class RoomTempModel{
     public:
         RoomTempModel(uint16_t _periodMs = 500,uint16_t roomC=1000, uint16_t roomR=1, uint16_t heatC=5, uint16_t heatR=1, uint16_t maxHeatTemp=30);
-        void begin(uint16_t playSpeed = 256,int16_t startTemp = 20, bool heatEnabled = false);
+        void begin(uint16_t playSpeed = 256,double startTemp = 20, bool heatEnabled = false);
         void run(void);
         double getTemp(void);
-        void setExtTemp(uint16_t extTemp);
+        void setExtTemp(double extTemp);
         void setHeaterEnabled(bool heatEnabled);
         uint16_t getPeriodMs();
 
@@ -18,7 +18,7 @@ class RoomTempModel{
         uint16_t _roomC; // Room capacity
         uint16_t _heaterR;      // Heater resistance
         uint16_t _heaterC;      // Heater capacity
-        uint16_t _Oe;           // Exterior temperature
+        double _Oe;           // Exterior temperature
         uint16_t _maxHeatTemp;  // Maximum temperature heater
         ulong _n;               // n room
         ulong _nQ;              // n heater
