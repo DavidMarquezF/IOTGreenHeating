@@ -43,8 +43,10 @@ class DHTStub {
     public:
         DHTStub(uint16_t pin);
         void begin(uint8_t usec = 90);
-        void updateData(float temp, float humid);
-        void sendIfNeeded(void);
+        void updateTemp(float temp);
+        void updateHumid(float humid);
+        void send(void);
+        bool waitingResponse(void);
     private:
         uint8_t _pullTime;
         uint16_t _pin;

@@ -4,6 +4,7 @@
 #define bitSet(byte, nbit) ((byte) |= (1 << (nbit)))
 #define bitClear(byte, nbit) ((byte) &= ~(1 << (nbit)))
 #define TIMEOUT UINT16_MAX
+#define abs(x) ((x)>0?(x):-(x))
 
 // https://github.com/adafruit/DHT-sensor-library/blob/master/DHT.cpp
 
@@ -28,24 +29,29 @@ void DHTStub::begin(uint8_t usec)
   attachReadInterrupt();
 }
 
-void DHTStub::updateData(float temp, float humid)
-{
-  _temp = (temp < 0 ? 0x8000 : 0) | (uint16_t)(abs(temp) * 10);
+void DHTStub::updateTemp(float temp){
+  _temp = (temp < 0 ? 0x8000 : 0) | (uint16_t)(abs(temp) * 10);  
+}
+
+void DHTStub::updateHumid(float humid){
   _humid = (int16_t)(humid * 10);
 }
 
-void DHTStub::sendIfNeeded()
+void DHTStub::send()
 {
-  if (_waitingResponse)
-  {
     sendData();
     _waitingResponse = false;
-  }
 }
+
+bool DHTStub::waitingResponse()
+{
+    return _waitingResponse;
+}
+
+
 void DHTStub::sendData()
 {
   DEBUG_PRINTLN("DHT sending data");
-
   detatchReadInterrupt();
   noInterrupts();
 
