@@ -4,20 +4,49 @@
  * Author:
  * Date:
  */
+
 #include "DHTStub.h"
+#include "RoomTempModel.h"
 
 DHTStub dht(D5);
+RoomTempModel model;
 
-// setup() runs once, when the device is first turned on.
-void setup() {
-  // Put initialization like pinMode and begin functions here.
-  dht.begin();
-  dht.updateData(-10, 100);
+int setExtTemp(String extra){
+  int value = extra.toInt();
+  model.setExtTemp(value);
+  return 0;
 }
 
-// loop() runs over and over again, as quickly as it can execute.
+int setHeaterOn(String extra){
+  int value = extra.toInt();
+  model.setHeaterEnabled(value > 0);
+  return 0;
+}
+
+void setup() {
+  Particle.function("setExtTemp", setExtTemp);
+  Particle.function("setHeaterOn", setHeaterOn);
+
+  dht.begin();
+  model.begin();  
+
+  dht.updateHumid(10);
+}
+
 void loop() {    
-    dht.sendIfNeeded();
+  static unsigned long time_now = 0;
+  
+  //if(dht.waitingResponse()){
+    //model.getTemp();
+  //  delay(1);
+    //dht.send();
+  //}
+  if(millis() - time_now > model.getPeriodMs()){
+      time_now = millis();
+      model.run();
+      dht.updateTemp(model.getTemp());
+  }
+  
 }
 
 

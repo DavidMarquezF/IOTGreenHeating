@@ -52,8 +52,8 @@ bool DHTStub::waitingResponse()
 void DHTStub::sendData()
 {
   DEBUG_PRINTLN("DHT sending data");
-  detatchReadInterrupt();
-  noInterrupts();
+ // detatchReadInterrupt();
+ // noInterrupts();
 
   pinMode(_pin, OUTPUT);
   digitalWrite(_pin, LOW);
@@ -90,8 +90,16 @@ void DHTStub::sendData()
   delayMicroseconds(10);
   // Reenable all interrupts
   pinMode(_pin, INPUT);
-  interrupts();
-  attachReadInterrupt();
+
+  // https://community.particle.io/t/interrupts-priority-architecture/18671/26
+  STM32_Pin_Info* PIN_MAP = HAL_Pin_Map();
+
+  uint16_t gpio_pin = PIN_MAP[_pin].gpio_pin;
+
+  EXTI_ClearITPendingBit(gpio_pin);
+
+  //interrupts();
+ // attachReadInterrupt();
 }
 
 void DHTStub::handleFallingInterrupt(void)
@@ -108,15 +116,15 @@ void DHTStub::handleFallingInterrupt(void)
     DEBUG_PRINTLN("Timeout low pulse");
     return;
   }
-  //delayMicroseconds(10);
-  /*if (expectPulse(HIGH) == TIMEOUT)
-  {
-    DEBUG_PRINTLN("Timeout high pulse");
-            DEBUG_PRINTLN(digitalRead(_pin));
+  
 
-    return;
-  }*/
-
+  // We're using a variable and doing polling because we would need
+  // to detatch the pin interrupt before sending data
+  // If it's not detached the interrupt is registered and called as soon
+  // as the current interrupt finishes. Photon has an error with 
+  // detachInterrupt, where calling it from inside an interrupt
+  // crashes the whole program
+  sendData(); 
   _waitingResponse = true;
 }
 
