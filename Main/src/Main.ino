@@ -343,7 +343,7 @@ void displayCurrentStatus() {
     display.setTextSize(1);
     display.setTextColor(WHITE);
     // display curent gp %
-    display.printlnf(" %3g %% ", round(currentGreenProduction.percentage));
+    (gpSuccessfulUpdates > 0) ? display.printlnf(" %3g %% ", round(currentGreenProduction.percentage)) : display.println("  n/a %");    
     display.println("in grid");
     // draw delimiters and the grid
     display.drawLine(51, 0, 51, SCREEN_HEIGHT-1, WHITE);
@@ -362,9 +362,9 @@ void displayCurrentStatus() {
     display.setCursor(54, 32);
     display.println(heatingOn ? "     ON" : "    OFF"); // TODO show on or off based on the current status
     display.setCursor(54, 48);
-    display.printlnf(" IN:  %2.1f C", currentTemperature.inside);
+    (tiSuccessfulUpdates > 0) ? display.printlnf(" IN:  %2.1f C", currentTemperature.inside) : display.println(" IN:  n/a C");
     display.setCursor(54, 56);
-    display.printlnf(" OUT: %2.1f C", currentTemperature.outside);
+    (taSuccessfulUpdates > 0) ? display.printlnf(" OUT: %2.1f C", currentTemperature.outside) : display.println(" OUT: n/a C");
     display.display();
 }
 
@@ -498,6 +498,8 @@ void loop() {
     handleHeating();
 
     displayCurrentStatus();
+
+    Particle.publish("iotGreenHeating", "{ \"1\": \"" + String(currentGreenProduction.percentage) + "\", \"2\":\"" + String(currentTemperature.inside) + "\", \"3\":\"" + String(currentTemperature.outside) + "\", \"k\":\"EFCEYN9AO5ATXI65\" }", 60, PRIVATE);
 
     Serial.printlnf("Sleep cycle #%d: Going to sleep for %d minutes...", n, checkPeriod);
     SystemSleepConfiguration config;
