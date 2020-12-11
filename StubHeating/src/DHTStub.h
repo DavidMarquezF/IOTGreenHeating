@@ -3,7 +3,7 @@
 
 /* Uncomment to enable printing out nice debug messages. */
 //#define DHT_DEBUG
-//ç#define DHT_DEBUG_VERB
+//#define DHT_DEBUG_VERB
 #define DEBUG_PRINTER                                                          \
   Serial /**< Define where debug output will be printed.                       \
           */
@@ -42,7 +42,7 @@
 class DHTStub {
     public:
         DHTStub(uint16_t pin);
-        void begin(uint8_t usec = 90);
+        void begin(uint8_t usec = 80);
         void updateTemp(float temp);
         void updateHumid(float humid);
     private:
