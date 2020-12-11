@@ -46,7 +46,7 @@ void DHTStub::sendData()
   uint16_t checkSum = ((uint8_t)_temp) + ((uint8_t) (_temp >> 8))+ ((uint8_t)_humid) + ((uint8_t)(_humid >> 8));
 
   // Since we received the high flank, the reader waits for 55 microseconds to start reading low
-  delayMicroseconds(55);
+//  delayMicroseconds(55); This line works with the Adafruit library but not with the Pierre (Pierre works with interrupts )
 
   // Datasheet says pull down for 80us
   // https://cdn-shop.adafruit.com/datasheets/Digital+humidity+and+temperature+sensor+AM2302.pdf
@@ -96,7 +96,6 @@ void DHTStub::sendData()
 
   EXTI_ClearITPendingBit(gpio_pin);
 
-
 }
 
 void DHTStub::handleFallingInterrupt(void)
@@ -139,7 +138,7 @@ void DHTStub::sendByte(uint8_t value)
     DEBUG_VERB_PRINT(val);
     delayMicroseconds(50);
     digitalWrite(_pin, HIGH);
-    delayMicroseconds(val ? 80 : 20);
+    delayMicroseconds(val ? 70 : 26);
   }
 }
 
