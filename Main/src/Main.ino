@@ -113,7 +113,6 @@ int taSuccessfulUpdates = 0;
 int tiSuccessfulUpdates = 0;
 
 int gpUpdateHour;
-boolean heatingOn;
 
 int n = 0;
 
@@ -363,7 +362,7 @@ void displayCurrentStatus() {
     display.setCursor(54, 24);
     display.println(" Heating is ");
     display.setCursor(54, 32);
-    display.println(heatingOn ? "     ON" : "    OFF"); // TODO show on or off based on the current status
+ //   display.println(heatingOn ? "     ON" : "    OFF"); // TODO show on or off based on the current status
     display.setCursor(54, 48);
     display.printlnf(" IN:  %2.1f C", currentTemperature.inside);
     display.setCursor(54, 56);
@@ -398,12 +397,12 @@ void printCurrentStatus() {
 
 void handleHeating() {
     // If the heating is currently on, check the status of the temperature
-    if (heatingOn) {
+    if (heater.isTurnedOn()) {
         // We know the state of the current room temperature
         if (tiSuccessfulUpdates > 0) {
             if (currentTemperature.inside >= desiredTemp) {
                 // Turn the heater off
-                heatingOn = false;
+                heater.turnOff();
                 Serial.println("Heater: I am turning off. We have reached the desired temperature.");
             } else {
                 // Let the heater be
@@ -420,11 +419,11 @@ void handleHeating() {
                 if (gpSuccessfulUpdates > 0) {
                     if (currentTemperature.inside < minTemp) {
                         // It is cold inside, we should turn on the heater no matter the green production percentage
-                        heatingOn = true;
+                        heater.turnOn();
                         Serial.println("Heater: Sorry man, it is too cold inside. I am turning the heater on even though it is not ecologic enough for you.");
                     } else if (currentGreenProduction.percentage >= minGreen) {
                         // The green production percentage is high enough to start heating
-                        heatingOn = true;
+                        heater.turnOn();
                         Serial.println("Heater: I am turning on the ecologic heating now.");
                     } else {
                         Serial.println("Heater: It is not that cold here and there is not enough green energy in the system right now to start the heating.");
@@ -433,7 +432,7 @@ void handleHeating() {
                 } else {
                     if (currentTemperature.inside < minTemp) {
                         // It is cold inside, we should turn on the heater no matter the green production percentage
-                        heatingOn = true;
+                        heater.turnOn();
                         Serial.println("Heater: Sorry man, it is too cold inside. I am turning the heater on even though I do not know anything about the green energy right now.");
                     } else {
                         Serial.println("Heater: I am off and I do not have data on green production!");

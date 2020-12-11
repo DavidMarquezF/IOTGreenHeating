@@ -7,8 +7,10 @@ class Heater{
         void setup(void);
         void turnOn(void);
         void turnOff(void);
+        bool isTurnedOn(void);
     private:
         uint16_t _pin;
+        bool _status;
 };
 
 #endif
