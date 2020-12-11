@@ -504,20 +504,18 @@ void loop() {
 
     Particle.publish("iotGreenHeating", "{ \"1\": \"" + String(currentGreenProduction.percentage) + "\", \"2\":\"" + String(currentTemperature.inside) + "\", \"3\":\"" + String(currentTemperature.outside) + "\", \"k\":\"EFCEYN9AO5ATXI65\" }", 60, PRIVATE);
 
-    // Serial.printlnf("Sleep cycle #%d: Going to sleep for %d minutes...", n, checkPeriod);
-    // SystemSleepConfiguration config;
-    // config.mode(SystemSleepMode::STOP)
-    //       .duration(checkPeriod * 1min)
-    //       .flag(SystemSleepFlag::WAIT_CLOUD);
-    // SystemSleepResult result = System.sleep(config);
+    Serial.printlnf("Sleep cycle #%d: Going to sleep for %d minutes...", n, checkPeriod);
+    SystemSleepConfiguration config;
+    config.mode(SystemSleepMode::STOP)
+          .duration(checkPeriod * 1min)
+          .flag(SystemSleepFlag::WAIT_CLOUD);
+    SystemSleepResult result = System.sleep(config);
 
-    // if (result.error() != 0) {
-    //     Serial.printlnf("Something went wrong during #%d sleep cycle.", n);
-    // } else {
-    //     Serial.printlnf("Sleep cycle #%d: Device successfully woke up from sleep.", n);
-    // }
-
-    delay(5s);
+    if (result.error() != 0) {
+        Serial.printlnf("Something went wrong during #%d sleep cycle.", n);
+    } else {
+        Serial.printlnf("Sleep cycle #%d: Device successfully woke up from sleep.", n);
+    }
 
     n++;
 }
