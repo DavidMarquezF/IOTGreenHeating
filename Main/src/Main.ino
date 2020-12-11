@@ -39,7 +39,7 @@ double minTemp = 18.0;
 double minGreen = 20.0;
 int checkPeriod = 2;
 
-Heater heater(D6);
+Heater heater(D7);
 
 // Particles functions (setters for the variables)
 int setDesiredTemp(String extra) {
@@ -362,7 +362,7 @@ void displayCurrentStatus() {
     display.setCursor(54, 24);
     display.println(" Heating is ");
     display.setCursor(54, 32);
- //   display.println(heatingOn ? "     ON" : "    OFF"); // TODO show on or off based on the current status
+    display.println(heater.isTurnedOn() ? "     ON" : "    OFF");
     display.setCursor(54, 48);
     (tiSuccessfulUpdates > 0) ? display.printlnf(" IN:  %2.1f C", currentTemperature.inside) : display.println(" IN:  n/a C");
     display.setCursor(54, 56);
@@ -417,14 +417,14 @@ void handleHeating() {
         if (tiSuccessfulUpdates > 0) {
             if (currentTemperature.inside < desiredTemp) {
                 if (gpSuccessfulUpdates > 0) {
-                    if (currentTemperature.inside < minTemp) {
-                        // It is cold inside, we should turn on the heater no matter the green production percentage
-                        heater.turnOn();
-                        Serial.println("Heater: Sorry man, it is too cold inside. I am turning the heater on even though it is not ecologic enough for you.");
-                    } else if (currentGreenProduction.percentage >= minGreen) {
+                    if (currentGreenProduction.percentage >= minGreen) {
                         // The green production percentage is high enough to start heating
                         heater.turnOn();
                         Serial.println("Heater: I am turning on the ecologic heating now.");
+                    } else if (currentTemperature.inside < minTemp) {
+                        // It is cold inside, we should turn on the heater no matter the green production percentage
+                        heater.turnOn();
+                        Serial.println("Heater: Sorry man, it is too cold inside. I am turning the heater on even though it is not ecologic enough for you.");
                     } else {
                         Serial.println("Heater: It is not that cold here and there is not enough green energy in the system right now to start the heating.");
                     }
@@ -504,18 +504,20 @@ void loop() {
 
     Particle.publish("iotGreenHeating", "{ \"1\": \"" + String(currentGreenProduction.percentage) + "\", \"2\":\"" + String(currentTemperature.inside) + "\", \"3\":\"" + String(currentTemperature.outside) + "\", \"k\":\"EFCEYN9AO5ATXI65\" }", 60, PRIVATE);
 
-    Serial.printlnf("Sleep cycle #%d: Going to sleep for %d minutes...", n, checkPeriod);
-    SystemSleepConfiguration config;
-    config.mode(SystemSleepMode::STOP)
-          .duration(checkPeriod * 1min)
-          .flag(SystemSleepFlag::WAIT_CLOUD);
-    SystemSleepResult result = System.sleep(config);
+    // Serial.printlnf("Sleep cycle #%d: Going to sleep for %d minutes...", n, checkPeriod);
+    // SystemSleepConfiguration config;
+    // config.mode(SystemSleepMode::STOP)
+    //       .duration(checkPeriod * 1min)
+    //       .flag(SystemSleepFlag::WAIT_CLOUD);
+    // SystemSleepResult result = System.sleep(config);
 
-    if (result.error() != 0) {
-        Serial.printlnf("Something went wrong during #%d sleep cycle.", n);
-    } else {
-        Serial.printlnf("Sleep cycle #%d: Device successfully woke up from sleep.", n);
-    }
+    // if (result.error() != 0) {
+    //     Serial.printlnf("Something went wrong during #%d sleep cycle.", n);
+    // } else {
+    //     Serial.printlnf("Sleep cycle #%d: Device successfully woke up from sleep.", n);
+    // }
+
+    delay(5s);
 
     n++;
 }
