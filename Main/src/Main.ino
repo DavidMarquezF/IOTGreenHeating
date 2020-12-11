@@ -8,6 +8,7 @@
 #include "Adafruit_GFX.h"
 #include "Adafruit_SSD1306.h"
 #include "PietteTech_DHT.h"
+#include "Heater.h"
 
 // Define macros for better readability
 #define GP_HOOK_RESP "hook-response/greenproduction"
@@ -37,6 +38,8 @@ double desiredTemp = 24.4;
 double minTemp = 21.2;
 double minGreen = 66.6;
 int checkPeriod = 15;
+
+Heater heater(D6);
 
 // Particles functions (setters for the variables)
 int setDesiredTemp(String extra) {
@@ -342,6 +345,7 @@ void setup() {
     Serial.print("DHT LIB version: ");
     Serial.println(DHTLIB_VERSION);
     DHT.begin();
+    heater.setup();
     // delay(2s);
 
     if (!display.begin(SSD1306_SWITCHCAPVCC))
