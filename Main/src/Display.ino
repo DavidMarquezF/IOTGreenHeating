@@ -1,6 +1,4 @@
 
-#include "Adafruit_GFX.h"
-#include "Adafruit_SSD1306.h"
 #include "Display.h"
 // Declaration for SSD1306 display connected using software SPI
 #define SCREEN_WIDTH (uint8_t)128 // OLED display width, in pixels
@@ -37,7 +35,10 @@ const unsigned char leafIcon [] PROGMEM = {
 };
 
 
-Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, OLED_MOSI, OLED_CLK, OLED_DC, OLED_RESET, OLED_CS);
+Display::Display(void)
+:     display(SCREEN_WIDTH, SCREEN_HEIGHT, OLED_MOSI, OLED_CLK, OLED_DC, OLED_RESET, OLED_CS)
+{
+}
 
 bool Display::begin(void){
     if(display.begin(SSD1306_SWITCHCAPVCC)){

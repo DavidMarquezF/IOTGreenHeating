@@ -102,8 +102,8 @@ int gpUpdateHour;
 int n = 0;
 
 // Library instantion
-PietteTech_DHT DHT(DHTPIN, DHTTYPE);
-Display display;
+static PietteTech_DHT DHT(DHTPIN, DHTTYPE);
+static Display display;
 
 // Hook response handlers
 void handleGreenProduction(const char *event, const char *data) {
