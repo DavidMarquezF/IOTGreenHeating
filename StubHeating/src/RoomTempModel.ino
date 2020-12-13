@@ -58,6 +58,7 @@ void RoomTempModel::setExtTemp(double extTemp)
 }
 void RoomTempModel::setHeaterEnabled(bool heatEnabled)
 {
+    if(_heatEnabled == heatEnabled) return;
     _heat0 = calcTempHeat();
     _heatEnabled = heatEnabled;
     _nQ = 0;
