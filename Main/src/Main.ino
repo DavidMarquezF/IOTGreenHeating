@@ -8,7 +8,6 @@
 #include "PietteTech_DHT.h"
 #include "Heater.h"
 #include "Display.h"
-#include "HttpDataHook.h"
 #include "GreenProduction.h"
 #include "OutTemp.h"
 
@@ -62,23 +61,22 @@ void initializeParticleVariablesAndFunctions()
     Particle.function("setCheckPeriod", setCheckPeriod);
 }
 
-Temperature currentTemperature;
-Heater heater(D7);
+static Temperature currentTemperature;
+static Heater heater(D7);
+static PietteTech_DHT DHT(DHTPIN, DHTTYPE);
+static Display display;
 
-boolean tiValidResponse;
-
-int tiInvalidCalls = 0;
 int tiSuccessfulUpdates = 0;
 
 static int n = 0;
 
-// Library instantion
-static PietteTech_DHT DHT(DHTPIN, DHTTYPE);
-static Display display;
+
 
 // Update inside temperature using DHT22 sensor
 static void updateInsideTemperature()
 {
+    int tiInvalidCalls;
+    bool tiValidResponse;
 
     tiValidResponse = false;
     tiInvalidCalls = 0;
