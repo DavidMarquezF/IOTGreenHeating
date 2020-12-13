@@ -9,12 +9,8 @@
 #include "Heater.h"
 #include "Display.h"
 #include "HttpDataHook.h"
-
-// Define macros for better readability
-#define GP_HOOK_RESP "hook-response/greenproduction"
-#define GP_HOOK_PUB "greenproduction"
-#define TA_HOOK_RESP "hook-response/temperatureAarhus"
-#define TA_HOOK_PUB "temperatureAarhus"
+#include "GreenProduction.h"
+#include "OutTemp.h"
 
 #define HOOK_REPEAT 3
 
@@ -23,12 +19,10 @@
 #define DHTPIN D5     // Digital pin for communications
 
 // Particle variables
-double desiredTemp = 24.0;
-double minTemp = 18.0;
-double minGreen = 20.0;
-int checkPeriod = 2;
-
-Heater heater(D7);
+static double desiredTemp = 24.0;
+static double minTemp = 18.0;
+static double minGreen = 20.0;
+static int checkPeriod = 2;
 
 // Particles functions (setters for the variables)
 int setDesiredTemp(String extra)
@@ -68,109 +62,20 @@ void initializeParticleVariablesAndFunctions()
     Particle.function("setCheckPeriod", setCheckPeriod);
 }
 
-// Struct for keeping latest green production data
-struct GreenProdData
-{
-    int _id;
-    float totalLoad;
-    float onshoreWind;
-    float offshoreWind;
-    float biomass;
-    float solarPower;
-    float hydroPower;
-    float otherRenewable;
-    float percentage;
-};
-
-// Struct for keeping temperature data
-
-// Internal structs and variables
-
-GreenProdData currentGreenProduction;
 Temperature currentTemperature;
+Heater heater(D7);
 
 boolean tiValidResponse;
 
 int tiInvalidCalls = 0;
-int gpSuccessfulUpdates = 0;
-int taSuccessfulUpdates = 0;
 int tiSuccessfulUpdates = 0;
 
-int gpUpdateHour;
-
-int n = 0;
+static int n = 0;
 
 // Library instantion
 static PietteTech_DHT DHT(DHTPIN, DHTTYPE);
 static Display display;
-static HttpDataHook temperatueOutisdeHttp;
-static HttpDataHook greenProdHttp;
 
-static void handleGreenProdResponse(const char *event, String* data)
-{
-    if (data->indexOf("~~") == -1 && !data->startsWith("~"))
-    {
-        // We have valid data
-        Serial.println("GP: Valid data.");
-        char strBuffer[256] = "";
-        data->toCharArray(strBuffer, 256);
-        int currentId = String(strtok(strBuffer, "~")).toInt();
-        // If ids match, we already have the most recent data
-        if (currentGreenProduction._id == currentId)
-        {
-            Serial.printf("The ids %d and %d match, aborting.\n", currentGreenProduction._id, currentId);
-            return;
-        }
-        else
-        {
-            currentGreenProduction._id = currentId;
-            currentGreenProduction.totalLoad = String(strtok(NULL, "~")).toFloat();
-            currentGreenProduction.onshoreWind = String(strtok(NULL, "~")).toFloat();
-            currentGreenProduction.offshoreWind = String(strtok(NULL, "~")).toFloat();
-            currentGreenProduction.biomass = String(strtok(NULL, "~")).toFloat();
-            currentGreenProduction.solarPower = String(strtok(NULL, "~")).toFloat();
-            currentGreenProduction.hydroPower = String(strtok(NULL, "~")).toFloat();
-            currentGreenProduction.otherRenewable = String(strtok(NULL, "~")).toFloat();
-        }
-        gpSuccessfulUpdates++;
-        gpUpdateHour = Time.hour();
-        currentGreenProduction.percentage = 100 * (currentGreenProduction.onshoreWind + currentGreenProduction.offshoreWind + currentGreenProduction.biomass + currentGreenProduction.solarPower + currentGreenProduction.hydroPower + currentGreenProduction.otherRenewable) / currentGreenProduction.totalLoad;
-        Serial.printf("Current green production percentage is: %.2f %%\n", currentGreenProduction.percentage);
-    }
-}
-
-static void handleGrenProdError(error_code_t code)
-{
-    Serial.println("Green production webhook failed!");
-    if (gpSuccessfulUpdates > 0)
-    {
-        Serial.println("Using latest valid data...");
-    }
-    else
-    {
-        // We cannot show anything, because there is no valid data
-        Serial.println("We cannot show anything, because there is no valid data!");
-    }
-}
-
-static void handleOutsideTempResponse(const char *event, String* data)
-{
-    currentTemperature.outside = data->toFloat();
-    taSuccessfulUpdates++;
-}
-
-static void handleOutsideTempError(error_code_t code)
-{
-    if (taSuccessfulUpdates > 0)
-    {
-        Serial.println("Using latest valid data...");
-    }
-    else
-    {
-        // We cannot show anything, because there is no valid data
-        Serial.println("We cannot show anything, because there is no valid data!");
-    }
-}
 // Update inside temperature using DHT22 sensor
 static void updateInsideTemperature()
 {
@@ -236,17 +141,7 @@ void printCurrentStatus()
     Serial.println(Time.timeStr());
     Serial.println("-----------------------------");
 
-    Serial.println("Green production information:");
-    Serial.printlnf("Last update hour: %d", gpUpdateHour);
-    Serial.printlnf("Percentage: %.2f %%", currentGreenProduction.percentage);
-    Serial.printlnf("Total: %.2f", currentGreenProduction.totalLoad);
-    Serial.printlnf("Onshore wind: %.2f", currentGreenProduction.onshoreWind);
-    Serial.printlnf("Offshore wind: %.2f", currentGreenProduction.offshoreWind);
-    Serial.printlnf("Biomass: %.2f", currentGreenProduction.biomass);
-    Serial.printlnf("Solar: %.2f", currentGreenProduction.solarPower);
-    Serial.printlnf("Hydro: %.2f", currentGreenProduction.hydroPower);
-    Serial.printlnf("Other: %.2f", currentGreenProduction.otherRenewable);
-
+    GreenProduction::displayInfo();
     Serial.println("-----------------------------");
     Serial.println("Temperature information: ");
     Serial.printlnf("Inside: %.2f C", currentTemperature.inside);
@@ -288,9 +183,9 @@ void handleHeating()
         {
             if (currentTemperature.inside < desiredTemp)
             {
-                if (gpSuccessfulUpdates > 0)
+                if (GreenProduction::hasValidData())
                 {
-                    if (currentGreenProduction.percentage >= minGreen)
+                    if (GreenProduction::getPercentage() >= minGreen)
                     {
                         // The green production percentage is high enough to start heating
                         heater.turnOn();
@@ -346,47 +241,34 @@ void setup()
     Time.zone(1);
 
     // Subscribe to the hook responses
-    temperatueOutisdeHttp.begin(TA_HOOK_RESP, TA_HOOK_PUB, handleOutsideTempResponse, handleOutsideTempError);
-    greenProdHttp.begin(GP_HOOK_RESP, GP_HOOK_PUB, handleGreenProdResponse, handleGrenProdError);
 
-    Serial.begin(9600);
-    Serial.print("DHT LIB version: ");
-    Serial.println(DHTLIB_VERSION);
+    GreenProduction::setup();
+    OutTemp::setup();
     DHT.begin();
     heater.setup();
-    // delay(2s);
-
     if (!display.begin())
     {
         Log.info("SSD1306 allocation failed");
         //TODO: Stop the execution of the program
     }
+
+    Serial.begin(9600);
+    Serial.print("DHT LIB version: ");
+    Serial.println(DHTLIB_VERSION);
 }
 
 // loop() runs over and over again, as quickly as it can execute.
 void loop()
 {
-    static bool requestStarted = false;
+    bool requestFinished = true;
     // The core of your code will likely live here.
     // Update once every hour, if we fail to get the data, we can perform extra update
-    if (Time.hour() > gpUpdateHour || (Time.hour() == 0 && gpUpdateHour == 23) || gpSuccessfulUpdates <= 0)
-    {
-        // Store latest data into variable and reinitialize current
-        if (!requestStarted)
-        {
-            greenProdHttp.request();
-        }
-    }
-
     // Store latest data into variable and reinitialize current
-    if (!requestStarted)
-    {
-        temperatueOutisdeHttp.request();
-    }
+    requestFinished &= GreenProduction::request(n);
 
-    requestStarted = true;
+    requestFinished &= OutTemp::request(n);
 
-    if (!temperatueOutisdeHttp.isWaiting() && !greenProdHttp.isWaiting())
+    if (requestFinished)
     {
         updateInsideTemperature();
 
@@ -394,10 +276,10 @@ void loop()
 
         handleHeating();
 
-        display.displayStatus(gpSuccessfulUpdates > 0, tiSuccessfulUpdates > 0, taSuccessfulUpdates > 0, heater.isTurnedOn(), currentTemperature, currentGreenProduction.percentage);
+        currentTemperature.outside = OutTemp::getTemp();
+        display.displayStatus(GreenProduction::hasValidData(), tiSuccessfulUpdates > 0, OutTemp::hasValidData(), heater.isTurnedOn(), currentTemperature, GreenProduction::getPercentage());
 
-        Particle.publish("iotGreenHeating", "{ \"1\": \"" + String(currentGreenProduction.percentage) + "\", \"2\":\"" + String(currentTemperature.inside) + "\", \"3\":\"" + String(currentTemperature.outside) + "\", \"k\":\"EFCEYN9AO5ATXI65\" }", 60, PRIVATE);
-        requestStarted = false;
+        Particle.publish("iotGreenHeating", "{ \"1\": \"" + String(GreenProduction::getPercentage()) + "\", \"2\":\"" + String(currentTemperature.inside) + "\", \"3\":\"" + String(OutTemp::getTemp()) + "\", \"k\":\"EFCEYN9AO5ATXI65\" }", 60, PRIVATE);
 
         Serial.printlnf("Sleep cycle #%d: Going to sleep for %d minutes...", n, checkPeriod);
         SystemSleepConfiguration config;
