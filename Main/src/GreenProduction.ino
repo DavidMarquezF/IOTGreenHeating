@@ -3,7 +3,7 @@
 
 #define GP_HOOK_RESP "hook-response/greenproduction"
 #define GP_HOOK_PUB "greenproduction"
-#define INVALID_HOUR 255;
+#define INVALID_HOUR ((uint8_t)255)
 struct GreenProdData
 {
     int _id;
@@ -73,7 +73,7 @@ static void handleGrenProdError(error_code_t code)
 
 static bool shouldRequest(void)
 {
-    return gpSuccessfulUpdates <= 0 || Time.hour() > gpUpdateHour || (Time.hour() == 0 && gpUpdateHour == 23);
+    return gpUpdateHour == INVALID_HOUR || gpSuccessfulUpdates <= 0 || Time.hour() > gpUpdateHour || (Time.hour() == 0 && gpUpdateHour == 23);
 }
 
 static uint16_t currentId;
